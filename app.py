@@ -14,15 +14,19 @@ ZAPI_URL = f"https://api.z-api.io/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/s
 with open('respostas.json', 'r', encoding='utf-8') as f:
     BASE_CONHECIMENTO = json.load(f)
 
-# 🔍 Busca a resposta correta
+# 🔍 Função para buscar a resposta correta
 def buscar_resposta(mensagem_cliente):
+    if not isinstance(mensagem_cliente, str):
+        print("⚠️ mensagem_cliente não é string:", mensagem_cliente)
+        return "Desculpe, não entendi. Pode repetir com outras palavras?"
+
     mensagem = mensagem_cliente.strip().lower()
     for item in BASE_CONHECIMENTO:
         if item['palavra'] in mensagem:
             return item['resposta']
     return "Desculpe, não encontrei uma resposta para isso."
 
-# 📤 Envia a resposta via Z-API
+# 📤 Função para enviar resposta usando Z-API
 def enviar_resposta(numero, mensagem):
     payload = {
         "phone": numero,
@@ -37,7 +41,7 @@ def enviar_resposta(numero, mensagem):
     print(f"📦 Payload: {payload}")
     print(f"📨 Resposta Z-API: {response.text}")
 
-# 🔁 Webhook que recebe mensagens da Z-API
+# 🔁 Webhook que recebe mensagens do WhatsApp
 @app.route('/webhook', methods=['POST'])
 def webhook():
     dados = request.get_json()
@@ -47,14 +51,14 @@ def webhook():
     numero = ''
 
     try:
-        # Captura segura dos dados
-        if isinstance(dados, dict):
-            corpo = dados.get("body", dados)
-            mensagem_recebida = corpo.get("message", "") or corpo.get("text", "")
-            numero = corpo.get("phone", "") or corpo.get("from", "")
+        corpo = dados.get("body", dados)
+        mensagem_recebida = corpo.get("message", "") or corpo.get("text", "")
+        numero = corpo.get("phone", "") or corpo.get("from", "")
     except Exception as e:
         print("❌ Erro ao interpretar JSON:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao processar dados"}), 400
+
+    print("📥 Mensagem recebida (tipo):", type(mensagem_recebida), "| Conteúdo:", mensagem_recebida)
 
     if not mensagem_recebida or not numero:
         print("⚠️ Dados ausentes:", mensagem_recebida, numero)
@@ -65,7 +69,7 @@ def webhook():
 
     return jsonify({"status": "ok", "resposta": resposta})
 
-# 🚀 Inicialização correta para ambientes como Render
+# 🚀 Inicialização compatível com Render
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
