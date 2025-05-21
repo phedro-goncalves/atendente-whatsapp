@@ -4,8 +4,8 @@ import requests
 
 app = Flask(__name__)
 
-ZAPI_TOKEN = 'SEU_TOKEN_AQUI'
-ZAPI_INSTANCE = 'SEU_INSTANCE_ID_AQUI'
+ZAPI_TOKEN = '9D3046B6FE2D8358711BED7B'
+ZAPI_INSTANCE = '3E17A25DC8280054AB9B16374B74BED7'
 ZAPI_URL = f"https://api.z-api.io/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/send-messages"
 
 with open('respostas.json', 'r', encoding='utf-8') as f:
