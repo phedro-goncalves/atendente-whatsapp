@@ -31,34 +31,39 @@ def enviar_resposta(numero, mensagem):
         "Client-Token": ZAPI_TOKEN
     }
 
-    print("📤 Enviando resposta para:", numero)
-    print("📨 Mensagem:", mensagem)
+    print("📤 Enviando resposta para:", numero, flush=True)
+    print("📨 Mensagem:", mensagem, flush=True)
 
-    response = requests.post(ZAPI_URL, json=payload, headers=headers)
-
-    print("✅ Status:", response.status_code)
-    print("📬 Resposta da ZAPI:", response.text)
+    try:
+        response = requests.post(ZAPI_URL, json=payload, headers=headers)
+        print("✅ Status:", response.status_code, flush=True)
+        print("📬 Resposta da ZAPI:", response.text, flush=True)
+    except Exception as e:
+        print("❌ Erro ao enviar mensagem:", str(e), flush=True)
 
 # Webhook que recebe as mensagens
 @app.route('/webhook', methods=['POST'])
 def webhook():
     dados = request.get_json()
-    print("📥 Dados recebidos:", dados)
+    print("📥 Dados recebidos:", dados, flush=True)
 
     numero = dados.get('phone')
     mensagem_recebida = dados.get('body', '')
 
+    print("🔎 Número:", numero, flush=True)
+    print("🔎 Tipo da mensagem:", type(mensagem_recebida), flush=True)
+    print("🔎 Conteúdo da mensagem:", repr(mensagem_recebida), flush=True)
+
     if not numero or not mensagem_recebida:
-        print("⚠️ Número ou mensagem vazia")
+        print("⚠️ Número ou mensagem ausente", flush=True)
         return jsonify({"erro": "Número ou mensagem ausente"}), 400
 
     resposta = buscar_resposta(mensagem_recebida)
-    print("🤖 Resposta encontrada:", resposta)
+    print("🤖 Resposta encontrada:", resposta, flush=True)
 
     enviar_resposta(numero, resposta)
 
     return jsonify({"status": "ok", "resposta": resposta})
 
-# Executa localmente (útil para testes locais)
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
