@@ -1,24 +1,23 @@
 from flask import Flask, request, jsonify
 import json
 import requests
-import os
 
 app = Flask(__name__)
 
-# 🔧 Configuração da Z-API
-ZAPI_TOKEN = 'E5B182BD99BE71ACBFB8CB41'
+# Configuração da Z-API
+ZAPI_TOKEN = '538C273AC0E03C3DFD9D1B67'
 ZAPI_INSTANCE = '3E17A25DC8280054AB9B16374B74BED7'
 ZAPI_URL = f"https://api.z-api.io/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/send-messages"
 
-# 📚 Base de conhecimento
+# Carrega a base de conhecimento do arquivo JSON
 with open('respostas.json', 'r', encoding='utf-8') as f:
     BASE_CONHECIMENTO = json.load(f)
 
-# 🔍 Função para buscar a resposta correta
+# Função para buscar a resposta com base na palavra-chave
 def buscar_resposta(mensagem_cliente):
     if not isinstance(mensagem_cliente, str):
-        print("⚠️ mensagem_cliente não é string:", mensagem_cliente)
-        return "Desculpe, não entendi. Pode repetir com outras palavras?"
+        print("[Erro] mensagem_cliente não é string:", mensagem_cliente)
+        return "Desculpe, não entendi sua pergunta."
 
     mensagem = mensagem_cliente.strip().lower()
     for item in BASE_CONHECIMENTO:
@@ -26,7 +25,7 @@ def buscar_resposta(mensagem_cliente):
             return item['resposta']
     return "Desculpe, não encontrei uma resposta para isso."
 
-# 📤 Função para enviar resposta usando Z-API
+# Envia a mensagem via Z-API
 def enviar_resposta(numero, mensagem):
     payload = {
         "phone": numero,
@@ -34,42 +33,33 @@ def enviar_resposta(numero, mensagem):
     }
     headers = {
         "Content-Type": "application/json",
-        "Client-Token": ZAPI_TOKEN
+        "Client-Token": ZAPI_TOKEN  # ATENÇÃO: deve ser "Client-Token"
     }
-    response = requests.post(ZAPI_URL, json=payload, headers=headers)
-    print(f"✅ Enviando para {numero} | Status: {response.status_code}")
-    print(f"📦 Payload: {payload}")
-    print(f"📨 Resposta Z-API: {response.text}")
 
-# 🔁 Webhook que recebe mensagens do WhatsApp
+    response = requests.post(ZAPI_URL, json=payload, headers=headers)
+
+    # Logs para análise
+    print("➡️ Enviando mensagem para:", numero)
+    print("📝 Conteúdo:", mensagem)
+    print("📦 Payload:", payload)
+    print("✅ Status Code:", response.status_code)
+    print("🔁 Resposta da API:", response.text)
+
+# Rota do webhook
 @app.route('/webhook', methods=['POST'])
 def webhook():
     dados = request.get_json()
-    print("🟡 JSON recebido:", dados)
 
-    mensagem_recebida = ''
-    numero = ''
+    print("📨 Dados recebidos no webhook:", dados)
 
-    try:
-        corpo = dados.get("body", dados)
-        mensagem_recebida = corpo.get("message", "") or corpo.get("text", "")
-        numero = corpo.get("phone", "") or corpo.get("from", "")
-    except Exception as e:
-        print("❌ Erro ao interpretar JSON:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao processar dados"}), 400
-
-    print("📥 Mensagem recebida (tipo):", type(mensagem_recebida), "| Conteúdo:", mensagem_recebida)
-
-    if not mensagem_recebida or not numero:
-        print("⚠️ Dados ausentes:", mensagem_recebida, numero)
-        return jsonify({"status": "erro", "mensagem": "Mensagem ou número ausente"}), 400
+    numero = dados.get('phone')
+    mensagem_recebida = dados.get('body', '')
 
     resposta = buscar_resposta(mensagem_recebida)
     enviar_resposta(numero, resposta)
 
     return jsonify({"status": "ok", "resposta": resposta})
 
-# 🚀 Inicialização compatível com Render
+# Início do app Flask
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(debug=False, host="0.0.0.0", port=10000)
