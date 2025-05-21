@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # 🔧 Configuração da Z-API
-ZAPI_TOKEN = '9D3046B6FE2D8358711BED7B'
+ZAPI_TOKEN = 'E5B182BD99BE71ACBFB8CB41'
 ZAPI_INSTANCE = '3E17A25DC8280054AB9B16374B74BED7'
 ZAPI_URL = f"https://api.z-api.io/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/send-messages"
 
